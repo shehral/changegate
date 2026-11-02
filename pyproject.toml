@@ -1,0 +1,134 @@
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "changegate"  # working name, pending a name check
+version = "0.0.1"
+description = "Compare a changed model with its base and report PASS / WARN / FAIL against a user-declared envelope."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+authors = [{ name = "Mohammad Ali Shehral" }]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Science/Research",
+  "Operating System :: POSIX",
+  "Programming Language :: Python :: 3",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+# Base install is CPU-only and model-free: config, hashing, the action log, direction files,
+# and signing and offline verification of records.
+dependencies = [
+  "pydantic>=2.11,<3",
+  "pyyaml>=6.0",
+  "numpy>=1.26",
+  "cryptography>=44",
+]
+
+[project.optional-dependencies]
+# White-box checks, tiny-model tests and the census on a developer machine (CPU / MPS).
+cpu = [
+  "torch>=2.8,<2.9",
+  "transformers>=4.57,<4.58",
+  "safetensors>=0.4.3",
+  "huggingface_hub>=0.34,<1.0",
+]
+# Linux CUDA nodes (tested with CUDA driver 12.8).
+gpu = [
+  "torch>=2.8,<2.9",
+  "transformers>=4.57,<4.58",
+  "safetensors>=0.4.3",
+  "huggingface_hub>=0.34,<1.0",
+  "vllm>=0.10.2,<0.11; sys_platform == 'linux'",
+]
+# Organism recipes: LoRA fine-tunes and the 4-bit variant (the GPTQ backend is installed by
+# hand on the cluster; see docs/ARCHITECTURE.md).
+organisms = [
+  "peft>=0.13",
+  "bitsandbytes>=0.44; sys_platform == 'linux'",
+]
+# Third-party validators the record interop tests run against when installed.
+interop = [
+  "securesystemslib>=1.0",
+  "in-toto-attestation>=0.9",
+  "cyclonedx-python-lib[json-validation]>=8",
+]
+
+# uv installs this group by default, so a fresh clone runs `uv run pytest` with no flags.
+[dependency-groups]
+dev = [
+  "pytest>=8.3",
+  "ruff>=0.6",
+]
+
+[project.scripts]
+changegate = "changegate.cli:run"
+
+# Kept out of every published build (TRIAGE, "Decisions taken 2026-10-02"): the internal
+# escalation log and review notes, local gate outputs, and the organism recipes, which stay
+# private and run only from the source tree. Remove a line here to reverse that decision.
+[tool.hatch.build]
+exclude = [
+  "TRIAGE.md",
+  "reviews/",
+  "changegate-out/",
+  "*.npy",
+  "src/changegate/organisms/recipes/",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/changegate"]
+exclude = ["src/changegate/organisms/recipes/"]
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+  "TRIAGE.md",
+  "reviews/",
+  "changegate-out/",
+  "*.npy",
+  "src/changegate/organisms/recipes/",
+  "tests/test_organisms_recipes.py",
+]
+
+[tool.uv]
+conflicts = [[{ extra = "cpu" }, { extra = "gpu" }]]
+
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cpu", extra = "cpu" },
+  { index = "pytorch-cu128", extra = "gpu" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["-ra", "--strict-markers"]
+markers = [
+  "gpu: needs a CUDA device; skipped when none is visible",
+  "model: builds or loads tiny models; needs the cpu or gpu extra, skipped otherwise",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests", "tools"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF", "D"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D"]

@@ -1,0 +1,14 @@
+{
+  "dataset": "changegate templated harmless instructions",
+  "fetched": "2026-09-28",
+  "items_sha256": "50397388828512031bcfec1f2bf5219508c6ac26e1658c0a3d9c7559fb52efc3",
+  "license": "Apache-2.0",
+  "license_file_sha256": null,
+  "n": 128,
+  "n_source_rows": 168,
+  "name": "synthetic_harmless",
+  "revision": null,
+  "seed": 0,
+  "source": "synthetic",
+  "source_url": "scripts/fetch_prompts.py"
+}

@@ -1,0 +1,32 @@
+# Example gate.yaml for a LoRA adapter swap: the CPU-only checks (tiers A and B). Behavior
+# batteries and drift read full weights, so merge the adapter into its base to run them.
+# Every threshold is a placeholder. Relative paths resolve against this file's directory.
+version: 0
+
+base:
+  path: models/base
+  kind: weights
+  base_ref: Qwen/Qwen2.5-0.5B-Instruct@main
+
+candidate:
+  path: models/candidate-lora  # a PEFT LoRA adapter directory
+  kind: adapter
+  base_ref: Qwen/Qwen2.5-0.5B-Instruct@main
+
+change_type: adapter_swap
+
+checks:
+  lineage:
+    envelope: {warn: 0.2, fail: 0.5, direction: higher_is_worse}
+    params:
+      refusal_direction: directions/base-refusal.npy
+      # an adapter's lineage stays "unknown" (no verdict) unless the base digest is pinned
+      base_sha256: null
+  adapter-diff:
+    envelope: {warn: 2.0, fail: 3.0, direction: higher_is_worse}   # z along the refusal direction
+    params:
+      refusal: directions/base-refusal.npy
+
+output:
+  # dir defaults to $CHANGEGATE_DATA/out (~/.changegate/out), outside the working tree
+  results: results.json

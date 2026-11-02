@@ -1,0 +1,58 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          python-version: "3.11"
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+
+  test-cpu:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+      - run: uv sync --locked --extra cpu --extra interop
+      # The record tests import cryptography directly (a base dependency) and fail, not skip,
+      # without it; this step names the cause first.
+      - run: uv run python -c "import cryptography"
+      - run: uv run pytest -m "not gpu"
+
+  never-claim:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: python3 tools/never_claim_lint.py
+
+  no-tracked-outputs:
+    # Refusal directions (*.npy) and gate outputs stay out of version control (review M-2).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: |
+          tracked="$(git ls-files -- '*.npy' 'changegate-out/' '**/changegate-out/**')"
+          if [ -n "$tracked" ]; then
+            echo "tracked output files (remove them from git):"
+            echo "$tracked"
+            exit 1
+          fi

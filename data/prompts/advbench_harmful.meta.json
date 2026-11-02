@@ -1,0 +1,14 @@
+{
+  "dataset": "AdvBench harmful behaviors (Zou et al., arXiv:2307.15043)",
+  "fetched": "2026-09-28",
+  "items_sha256": "ec625d90eaad415fc09be4aa457da3f9d991756d9b806f6a4e54e0fb7616ffce",
+  "license": "MIT",
+  "license_file_sha256": "1e4bb8e2313ef9ff36033526503aa8837c80ba1d4c055c2e7d9977760028eec7",
+  "n": 128,
+  "n_source_rows": 520,
+  "name": "advbench_harmful",
+  "revision": "098262edf85f807224e70ecd87b9d83716bf6b73",
+  "seed": 0,
+  "source": "advbench",
+  "source_url": "https://raw.githubusercontent.com/llm-attacks/llm-attacks/098262edf85f807224e70ecd87b9d83716bf6b73/data/advbench/harmful_behaviors.csv"
+}
